@@ -1,0 +1,21 @@
+{
+    "name": "lecodeurdudimanche/php-player",
+    "description": "PHP music player controlled via Unix sockets",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Adrien Duval",
+            "email": "adrien.duval.bonnet@gmail.com"
+        }
+    ],
+    "autoload": {
+       "psr-4": {
+           "lecodeurdudimanche\\PHPPlayer\\": "src/"
+       }
+   },
+    "require": {
+        "php" : ">7.2",
+        "lecodeurdudimanche/php-unix-streams": "dev-master"
+    }
+}
