@@ -2,6 +2,7 @@
     namespace lecodeurdudimanche\PHPPlayer;
 
     use lecodeurdudimanche\UnixStream\{UnixStream, Message};
+    use lecodeurdudimanche\Processes\Command;
 
     class Manager {
 
@@ -20,7 +21,7 @@
             $this->openStream();
         }
 
-        private function ensureDaemonIsRunning()
+        private function ensureDaemonIsRunning() : void
         {
             $daemonFile = __DIR__ . "/daemon.php";
             while (! $this->daemonPID = self::fetchDaemonPID())
@@ -38,7 +39,7 @@
             echo "Daemon PID is $this->daemonPID\n";
         }
 
-        private function openStream()
+        private function openStream() : void
         {
             $this->stream = new UnixStream(MusicDaemon::getSocketFile());
         }
@@ -59,12 +60,7 @@
         }
 
 
-        public function setVolume(int $volume)
-        {
-            $this->stream->write(new Message(MessageType::SET_VOLUME, $volume));
-        }
-
-        public function queueMusic(string $type, string $uri, int $position = MusicDaemon::LAST_POS)
+        public function queueMusic(string $type, string $uri, int $position = MusicDaemon::LAST_POS) : void
         {
             $data = compact("type", "uri", "position");
             $this->stream->write(new Message(MessageType::QUEUE_MUSIC, $data));
@@ -79,12 +75,24 @@
 
         }
 
-        public function getPlaybackStatus()
+        public function syncPlaybackStatus() : PlaybackStatus
+        {
+            $this->stream->write(new Message(MessageType::QUERY, null));
+
+            // Pas ouf vu qu'on ignore des trucs potentiellement important, mais normalement c'est ok
+            $message = $this->stream->readNext([MessageType::PLAYBACK_DATA]);
+
+            $this->playbackStatus = PlaybackStatus::fromArray($message->getData());
+
+            return $this->getPlaybackStatus();
+        }
+
+        public function getPlaybackStatus() : PlaybackStatus
         {
             return $this->playbackStatus;
         }
 
-        private function sendCommand(string $cmd)
+        private function sendCommand(string $cmd) : void
         {
             $m = new Message(MessageType::PLAYBACK_COMMAND, $cmd);
             $this->stream->write($m);

@@ -16,6 +16,7 @@
    },
     "require": {
         "php" : ">7.2",
-        "lecodeurdudimanche/php-unix-streams": "dev-master"
+        "lecodeurdudimanche/php-unix-streams": "dev-master",
+        "lecodeurdudimanche/php-process-launcher": "dev-master"
     }
 }

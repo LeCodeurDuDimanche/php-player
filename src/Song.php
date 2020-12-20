@@ -1,11 +1,14 @@
 <?php
     namespace lecodeurdudimanche\PHPPlayer;
+    
+    use lecodeurdudimanche\Processes\Command;
 
-    class Song {
+    class Song implements \JsonSerializable {
         const AVAILABLE_TYPES = ['local', 'youtube', 'url'];
 
         private $uri, $type, $name, $path;
         private $ready, $loading, $loadCommand;
+        private $length;
 
         public function __construct(string $type, string $uri)
         {
@@ -19,6 +22,23 @@
             $this->name = $this->guessName();
             $this->loadCommand = null;
             $this->path = null;
+            $this->length = 0;
+        }
+
+        public static function fromArray(array $data) : Song
+        {
+            $s = new Song($data["type"], $data["uri"]);
+            foreach($data as $attr => $val)
+                $s->$attr = $val;
+            return $s;
+        }
+
+        public function jsonSerialize() : array
+        {
+            $data = [];
+            foreach(["type", "uri", "ready", "loading", "name", "length"] as $attr)
+                $data[$attr] = $this->$attr;
+            return $data;
         }
 
         public function isReady() : bool
@@ -53,6 +73,12 @@
             return $this->path;
         }
 
+        public function __toString() : string
+        {
+            $status = $this->ready ? "ready" : ($this->loading ? "loading" : "not ready");
+            return "Song '$this->name' of type $this->type (uri : $this->uri). Status : $status. Length : $this->length s";
+        }
+
         public function guessName() : string
         {
             switch($this->type)
@@ -83,6 +109,7 @@
             }
 
             $this->loading = true;
+            //TODO: Should I let them in their origin format ?
             switch ($this->type) {
                 case 'local':
                     echo "loading local file $escapedURI to " . $this->path . "\n";
@@ -95,7 +122,7 @@
                 case 'youtube':
                     echo "loading yt video $escapedURI\n";
                     $titleRegex = "'\\\"fulltitle\\\": \\\"[^\\\"]*\\\"'";
-                    $this->loadCommand = new Command("youtube-dl '$escapedURI' --no-playlist -x --audio-format wav -o \"$outputFileWithoutExt.%(ext)s\" && grep -oE $titleRegex \"$outputFileWithoutExt.%(ext)s.info.json\" && rm \"$outputFileWithoutExt.%(ext)s.info.json\"");
+                    $this->loadCommand = new Command("youtube-dl '$escapedURI' --no-playlist -x --audio-format wav -o \"$outputFileWithoutExt.%(ext)s\" && grep -oE $titleRegex \"$outputFileWithoutExt.info.json\" && rm \"$outputFileWithoutExt.info.json\"");
                     break;
             }
 
@@ -112,7 +139,7 @@
             {
                 if ($errors = $this->loadCommand->getNextErrorLine()) {
                     echo "Erreur chargement :\n $errors\n";
-                    throw new \Exception("Impossible de charger la musique : $errors");
+                    throw new LoadingException("Impossible de charger la musique : $errors");
                 }
 
                 if ($this->type == "youtube")

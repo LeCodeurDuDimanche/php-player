@@ -3,5 +3,5 @@
 namespace lecodeurdudimanche\PHPPlayer;
 
 class MessageType {
-    public const PLAYBACK_COMMAND = 1, SET_VOLUME = 2, QUEUE_MUSIC = 3, KILL = 4;
+    public const PLAYBACK_COMMAND = 1, QUEUE_MUSIC = 2, KILL = 3, PLAYBACK_DATA = 4, FEEDBACK_DATA = 5, QUERY = 6;
 }

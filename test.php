@@ -20,7 +20,7 @@
         sleep(1);
     }
 
-    sleep(5);
+    /*sleep(5);
 
     echo "Skipping...\n";
     $manager->next();
@@ -41,7 +41,7 @@
     echo "Playing first song\n";
     $manager->prev();
     $manager->prev();
-    $manager->prev();
+    $manager->prev();*/
     sleep(4);
 
     echo "Pause\n";
