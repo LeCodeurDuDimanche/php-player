@@ -12,4 +12,4 @@
             break;
         }
     }
-    (new MusicDaemon)->run();
+    (new MusicDaemon)->run($argv[1] ?? null);

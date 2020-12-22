@@ -12,27 +12,29 @@ class MusicDaemon {
     private $status;
     private $player;
     private $shouldPlay;
+    private $cacheDir;
 
-    public function __construct()
+    public function __construct(?string $cacheDir = null)
     {
         $this->listeningSocket = new UnixStreamServer(self::getSocketFile());
         $this->streams = [];
         $this->status = new PlaybackStatus;
         $this->player = null;
         $this->shouldPlay = true;
+        $this->cacheDir = $cacheDir ?? getenv("HOME") . "/player-music";
 
         $this->createLibraryDirectory();
     }
 
     private function createLibraryDirectory()
     {
-        if (! file_exists(self::getLibraryDirectory()))
-            mkdir(self::getLibraryDirectory(), 0777, true);
+        if (! file_exists($this->getLibraryDirectory()))
+            mkdir($this->getLibraryDirectory(), 0777, true);
     }
 
-    public static function getLibraryDirectory() : string
+    public function getLibraryDirectory() : string
     {
-        return getenv("HOME") . "/player-music";
+        return $this->cacheDir;
     }
 
     public static function getSocketFile() : string
@@ -121,7 +123,7 @@ class MusicDaemon {
     private function addSong(Song $song, int $pos) : void
     {
         // Load song, if needed
-        $song->load(self::getLibraryDirectory());
+        $song->load($this->getLibraryDirectory());
 
         $this->status->addSong($song, $pos);
     }
