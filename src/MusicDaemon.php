@@ -201,7 +201,7 @@ class MusicDaemon {
             return;
         }
 
-        $this->player = new Command("ffplay -vn -nodisp -loglevel fatal '{$song->getPath()}'");
+        $this->player = new Command("ffplay -vn -nodisp -autoexit -loglevel fatal '{$song->getPath()}'");
         $this->player->launch();
 
         $this->status->play();
