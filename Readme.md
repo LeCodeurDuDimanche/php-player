@@ -21,8 +21,6 @@ PHP version >= 7.2
 ```
 
 ## TODO
-     - Fix song name from youtube being undefined if song is in cache
-     - Add song metadata awarness (song length)
      - Add cache control ?
      - Can't ensure cache dir of already running daemon (cause cache mismatch (apparently))
 

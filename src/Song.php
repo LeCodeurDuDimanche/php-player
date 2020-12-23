@@ -104,6 +104,7 @@
 
             if (file_exists($this->path))
             {
+                $this->extractMetadata();
                 $this->ready = true;
                 return true;
             }
@@ -121,14 +122,29 @@
                     break;
                 case 'youtube':
                     echo "loading yt video $escapedURI\n";
-                    $titleRegex = "'\\\"fulltitle\\\": \\\"[^\\\"]*\\\"'";
-                    $this->loadCommand = new Command("youtube-dl '$escapedURI' --no-cache-dir --write-info-json --no-playlist -x --audio-format wav -o \"$outputFileWithoutExt.%(ext)s\" && grep -oE $titleRegex \"$outputFileWithoutExt.info.json\" && rm \"$outputFileWithoutExt.info.json\"");
+                    $this->loadCommand = new Command("youtube-dl '$escapedURI' --no-cache-dir --write-info-json --no-playlist -x --audio-format wav -o \"$outputFileWithoutExt.%(ext)s\"");
                     break;
             }
 
             $this->loadCommand->launch();
 
             return false;
+        }
+
+        private function extractMetadata() : void
+        {
+            if ($this->type == "youtube")
+            {
+                $info = pathinfo($this->path);
+                $pathWithoutExt = "$info[dirname]/$info[filename]";
+                if (file_exists("$pathWithoutExt.info.json")) {
+                    $data = json_decode(file_get_contents("$pathWithoutExt.info.json"), true);
+                    $this->name = $data["fulltitle"];
+                    $this->length = intval($data["duration"]);
+                }
+            }
+            if (! $this->length)
+                $this->length = intval((new Command("ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 $this->path"))->execute()["out"]);
         }
 
         private function updateStatus() : void
@@ -142,8 +158,7 @@
                     throw new LoadingException("Impossible de charger la musique : $errors");
                 }
 
-                if ($this->type == "youtube")
-                    $this->name = substr($this->loadCommand->getNextLine(), strlen("\"filename\": \""), -1);
+                $this->extractMetadata();
 
                 $this->loading = false;
                 $this->ready = true;
