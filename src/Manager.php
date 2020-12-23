@@ -48,7 +48,7 @@
 
         public static function fetchDaemonPID() : int
         {
-            $command = new Command("ps axo pid,cmd|grep -E \"[0-9]{1,} php .*php-player/src/daemon.php$\"");
+            $command = new Command("ps axo pid,cmd|grep -E \"[0-9]{1,} php .*php-player/src/daemon.php\"");
             $result = $command->execute();
             return intval($result["out"]);
         }
