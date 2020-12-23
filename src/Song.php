@@ -1,6 +1,6 @@
 <?php
     namespace lecodeurdudimanche\PHPPlayer;
-    
+
     use lecodeurdudimanche\Processes\Command;
 
     class Song implements \JsonSerializable {
@@ -122,7 +122,7 @@
                 case 'youtube':
                     echo "loading yt video $escapedURI\n";
                     $titleRegex = "'\\\"fulltitle\\\": \\\"[^\\\"]*\\\"'";
-                    $this->loadCommand = new Command("youtube-dl '$escapedURI' --no-playlist -x --audio-format wav -o \"$outputFileWithoutExt.%(ext)s\" && grep -oE $titleRegex \"$outputFileWithoutExt.info.json\" && rm \"$outputFileWithoutExt.info.json\"");
+                    $this->loadCommand = new Command("youtube-dl '$escapedURI' --no-cache-dir --write-info-json --no-playlist -x --audio-format wav -o \"$outputFileWithoutExt.%(ext)s\" && grep -oE $titleRegex \"$outputFileWithoutExt.info.json\" && rm \"$outputFileWithoutExt.info.json\"");
                     break;
             }
 
