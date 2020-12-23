@@ -11,10 +11,12 @@
         protected $daemonPID;
         protected $playbackStatus;
         protected $stream;
+        protected $cachedDir;
 
-        public function __construct()
+        public function __construct(?string $cacheDir = null)
         {
             $this->playbackStatus = new PlaybackStatus;
+            $this->cacheDir = $cacheDir;
 
             $this->ensureDaemonIsRunning();
 
@@ -26,17 +28,17 @@
             $daemonFile = __DIR__ . "/daemon.php";
             while (! $this->daemonPID = self::fetchDaemonPID())
             {
-                 echo "Starting control daemon...\n";
+                 //echo "Starting control daemon...\n";
 
                 if (!is_dir("/tmp/php-player"))
                     mkdir("/tmp/php-player");
 
-                $output = (new Command("nohup php $daemonFile 1> /tmp/php-player/daemon-out 2> /tmp/php-player/daemon-err &"))->execute();
+                $output = (new Command("nohup php $daemonFile " . ($this->cacheDir ?? "") . " 1> /tmp/php-player/daemon-out 2> /tmp/php-player/daemon-err &"))->execute();
                 if ($output['err'])
                     throw new \Exception("Failed to start daemon : $output[err]");
                 sleep(1);
             }
-            echo "Daemon PID is $this->daemonPID\n";
+            //echo "Daemon PID is $this->daemonPID\n";
         }
 
         private function openStream() : void
