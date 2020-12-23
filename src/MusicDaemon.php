@@ -16,6 +16,8 @@ class MusicDaemon {
 
     public function __construct(?string $cacheDir = null)
     {
+        $this->checkExistingDaemon();
+
         $this->listeningSocket = new UnixStreamServer(self::getSocketFile());
         $this->streams = [];
         $this->status = new PlaybackStatus;
@@ -24,6 +26,21 @@ class MusicDaemon {
         $this->cacheDir = $cacheDir ?? getenv("HOME") . "/player-music";
 
         $this->createLibraryDirectory();
+    }
+    private function checkExistingDaemon()
+    {
+        if (($pid = Manager::fetchDaemonPID()) != getmypid() && $pid)
+            throw new \Exception("Daemon is already running ($pid)");
+        if (file_exists(self::getSocketFile()))
+        {
+            try {
+                $stream = new UnixStream(self::getSocketFile());
+                $stream->write(new Message(MessageType::KILL, ""));
+                $stream->close();
+                usleep(50 * 1000);
+            } catch(IOException $e)
+            {}
+        }
     }
 
     private function createLibraryDirectory()
