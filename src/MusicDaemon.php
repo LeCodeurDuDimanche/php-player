@@ -90,6 +90,7 @@ class MusicDaemon {
                     $this->playbackControl($data);
                     break;
                 case MessageType::QUERY:
+                    $this->checkSongStatus();
                     $messagePair['stream']->write(new Message(MessageType::PLAYBACK_DATA, $this->status));
                     break;
                 }
@@ -174,6 +175,20 @@ class MusicDaemon {
         //TODO: Should we really broadcast that ? I think not but anyways...
         foreach ($this->streams as $stream)
             $stream->write($data);
+    }
+
+
+    private function checkSongStatus() : void
+    {
+        for ($i = 0; $i < $this->status->getQueueLength(); $i++)
+        {
+            $song = $this->status->getSong($i);
+            try {
+                $song->updateStatus();
+            } catch (LoadingException $e) {
+                $this->status->removeSong($i);
+            }
+        }
     }
 
     private function doChange(int $offset) : void

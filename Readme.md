@@ -21,6 +21,8 @@ PHP version >= 7.2
 ```
 
 ## TODO
+     - Add error check from manager
+     - Prevent incorrect video being added to playlist
      - Add cache control ?
      - Can't ensure cache dir of already running daemon (cause cache mismatch (apparently))
 
