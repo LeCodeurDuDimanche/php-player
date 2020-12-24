@@ -184,7 +184,7 @@ class MusicDaemon {
         {
             $song = $this->status->getSong($i);
             try {
-                $song->updateStatus();
+                $song->isReady();
             } catch (LoadingException $e) {
                 $this->status->removeSong($i);
             }
