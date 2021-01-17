@@ -122,7 +122,7 @@
                     break;
                 case 'youtube':
                     echo "loading yt video $escapedURI\n";
-                    $this->loadCommand = new Command("youtube-dl '$escapedURI' --no-cache-dir --write-info-json --no-playlist -x --audio-format wav -o \"$outputFileWithoutExt.%(ext)s\"");
+                    $this->loadCommand = new Command("youtube-dl '$escapedURI' --no-cache-dir --write-info-json --no-playlist -x --restrict-filenames --audio-format wav -o \"$outputFileWithoutExt.%(ext)s\"");
                     break;
             }
 
