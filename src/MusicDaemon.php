@@ -246,7 +246,7 @@ class MusicDaemon {
         echo "Will play $index {$song->getName()}\n";
         //TODO : find better solution
         try {
-            while ($song->getLoadingStart() > 0 && microtime(true) - $song->getLoadingStart() < $this->config["caching_time"])
+            while ($song->getLoadingStart() > 0 && microtime(true) - $song->getLoadingStart() < $this->config["caching_time"] && !$song->isReady())
                 usleep(50 * 1000);
         } catch (LoadingException $e)
         {
