@@ -61,6 +61,10 @@
                 $this->stream->write(new Message(MessageType::KILL, ""));
         }
 
+        public function setConfigurationOption(string $key, string $value) : void
+        {
+            $this->stream->write(new Message(MessageType::CONF_SET, compact("key", "value")));
+        }
 
         public function queueMusic(string $type, string $uri, int $position = MusicDaemon::LAST_POS) : void
         {

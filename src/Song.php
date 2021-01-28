@@ -91,7 +91,7 @@
             }
         }
 
-        public function load(string $dir) : bool
+        public function load(string $dir, string $format="wav") : bool
         {
             if ($this->isReady()) return true;
             if ($this->isLoading()) return false;
@@ -100,7 +100,7 @@
             // Hash for sipmlicity sake : no need to sanitize file name
             //$outputFileWithoutExt = "$dir/" . sanitize($this->getName());
             $outputFileWithoutExt = "$dir/". md5($this->uri);
-            $this->path = "$outputFileWithoutExt.wav";
+            $this->path = "$outputFileWithoutExt.$format";
 
             if (file_exists($this->path))
             {
@@ -122,7 +122,7 @@
                     break;
                 case 'youtube':
                     echo "loading yt video $escapedURI\n";
-                    $this->loadCommand = new Command("youtube-dl '$escapedURI' --no-cache-dir --write-info-json --no-playlist -x --restrict-filenames --audio-format wav -o \"$outputFileWithoutExt.%(ext)s\"");
+                    $this->loadCommand = new Command("youtube-dl '$escapedURI' --no-cache-dir --write-info-json --no-playlist -x --restrict-filenames --audio-format $format -o \"$outputFileWithoutExt.%(ext)s\"");
                     break;
             }
 

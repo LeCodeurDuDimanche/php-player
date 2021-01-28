@@ -13,6 +13,7 @@ class MusicDaemon {
     private $player;
     private $shouldPlay;
     private $cacheDir;
+    private $config;
 
     public function __construct(?string $cacheDir = null)
     {
@@ -24,10 +25,13 @@ class MusicDaemon {
         $this->player = null;
         $this->shouldPlay = true;
         $this->cacheDir = $cacheDir ?? getenv("HOME") . "/player-music";
+        $this->config = [];
 
         $this->createLibraryDirectory();
+        $this->loadDefaultConfig();
     }
-    private function checkExistingDaemon()
+
+    private function checkExistingDaemon() : void
     {
         if (($pid = Manager::fetchDaemonPID()) != getmypid() && $pid)
             throw new \Exception("Daemon is already running ($pid)");
@@ -43,11 +47,19 @@ class MusicDaemon {
         }
     }
 
-    private function createLibraryDirectory()
+    private function createLibraryDirectory() : void
     {
         if (! file_exists($this->getLibraryDirectory()))
             mkdir($this->getLibraryDirectory(), 0777, true);
     }
+
+    private function loadDefaultConfig() : void
+    {
+        $config = [
+                'format' => 'wav',
+        ];
+    }
+
 
     public function getLibraryDirectory() : string
     {
@@ -72,6 +84,7 @@ class MusicDaemon {
 
             $this->managePlayback();
 
+            //TODO: sanity checks on inputs
             while ($messagePair = $this->getNextCommand())
             {
                 $message = $messagePair['message'];
@@ -93,6 +106,10 @@ class MusicDaemon {
                     $this->checkSongStatus();
                     $messagePair['stream']->write(new Message(MessageType::PLAYBACK_DATA, $this->status));
                     break;
+                case MessageType::CONF_SET:
+                    $this->set($data["key"], $data["value"]);
+                    break;
+
                 }
             }
 
@@ -106,6 +123,12 @@ class MusicDaemon {
         $this->listeningSocket->close();
 
         unlink(self::getSocketFile());
+    }
+
+    private function set(string $key, string $value) : void
+    {
+        //TODO: sanity check on inputs
+        $config[$key] = $value;
     }
 
     // Inter process communciation
@@ -141,7 +164,7 @@ class MusicDaemon {
     private function addSong(Song $song, int $pos) : void
     {
         // Load song, if needed
-        $song->load($this->getLibraryDirectory());
+        $song->load($this->getLibraryDirectory(), $this->config["format"]);
 
         $this->status->addSong($song, $pos);
     }
