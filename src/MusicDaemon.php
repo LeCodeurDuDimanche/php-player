@@ -55,8 +55,9 @@ class MusicDaemon {
 
     private function loadDefaultConfig() : void
     {
-        $config = [
+        $this->config = [
                 'format' => 'wav',
+                'caching_time' => 1.5 // in seconds, resolution is 50 ms
         ];
     }
 
@@ -97,7 +98,12 @@ class MusicDaemon {
                     echo "Kill recevied\n";
                     continue 2;
                 case MessageType::QUEUE_MUSIC:
-                    $this->addSong(new Song($data["type"], $data["uri"]), $data['position']);
+                    try {
+                        $song = new Song($data["type"], $data["uri"]);
+                        $this->addSong($song, $data['position']);
+                    } catch(\Exception $e) {
+                        $messagePair['stream']->write(new Message(MessageType::FEEDBACK_DATA, $e->getMessage()));
+                    }
                     break;
                 case MessageType::PLAYBACK_COMMAND:
                     $this->playbackControl($data);
@@ -127,7 +133,15 @@ class MusicDaemon {
 
     private function set(string $key, string $value) : void
     {
-        //TODO: sanity check on inputs
+        switch($key){
+            case 'format':
+                if (! in_array($value, ["wav", "mp3", "ogg"]))
+                    return;
+                break;
+            case 'caching_value':
+                $value = min(10, abs(floatval($value)));
+                break;
+        }
         $config[$key] = $value;
     }
 
@@ -232,7 +246,8 @@ class MusicDaemon {
         echo "Will play $index {$song->getName()}\n";
         //TODO : find better solution
         try {
-            while (! $song->isReady()) usleep(50 * 1000);
+            while ($song->getLoadingStart() > 0 && microtime(true) - $song->getLoadingStart() < $this->config["caching_time"])
+                usleep(50 * 1000);
         } catch (LoadingException $e)
         {
             $this->sendError("loading", $e->getMessage());

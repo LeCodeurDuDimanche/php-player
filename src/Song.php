@@ -9,6 +9,7 @@
         private $uri, $type, $name, $path;
         private $ready, $loading, $loadCommand;
         private $length;
+        private $loadingStart;
 
         public function __construct(string $type, string $uri)
         {
@@ -23,6 +24,7 @@
             $this->loadCommand = null;
             $this->path = null;
             $this->length = 0;
+            $this->loadingStart = -1;
         }
 
         public static function fromArray(array $data) : Song
@@ -91,6 +93,11 @@
             }
         }
 
+        public function getLoadingStart() : float
+        {
+            return $this->loadingStart;
+        }
+
         public function load(string $dir, string $format="wav") : bool
         {
             if ($this->isReady()) return true;
@@ -110,6 +117,7 @@
             }
 
             $this->loading = true;
+            $this->loadingStart = microtime(true);
             //TODO: Should I let them in their origin format ?
             switch ($this->type) {
                 case 'local':

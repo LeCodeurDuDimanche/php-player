@@ -47,6 +47,14 @@
         $m = null;
     }
 
+    function cmd_set($m, $args)
+    {
+        if (count($args) != 2)
+            echo "Usage : set key value";
+        else
+            $m->setConfigurationOption($args[0], $args[1]);
+    }
+
     function cmd_help()
     {
         global $commands;
@@ -64,9 +72,11 @@
         echo $data . "\n";
     }
 
+    echo "Starting manager...";
     $manager = new Manager();
+    echo "\r                   \r";
 
-    $commands = ["add", "play", "pause", "next", "prev", "query", "kill", "start", "help"];
+    $commands = ["add", "play", "pause", "next", "prev", "query", "kill", "start", "set", "help"];
 
     while (true)
     {
