@@ -148,7 +148,7 @@ class MusicDaemon {
                 $value = boolval($value);
                 break;
         }
-        $config[$key] = $value;
+        $this->config[$key] = $value;
     }
 
     // Inter process communciation
@@ -166,7 +166,7 @@ class MusicDaemon {
         foreach($this->streams as $key => $stream)
         {
             try {
-                $message = $stream->readNext([MessageType::PLAYBACK_COMMAND, MessageType::QUEUE_MUSIC, MessageType::KILL, MessageType::QUERY], false);
+                $message = $stream->readNext([MessageType::PLAYBACK_COMMAND, MessageType::QUEUE_MUSIC, MessageType::KILL, MessageType::QUERY, MessageType::CONF_SET], false);
                 if ($message)
                     return compact("message", "stream");
 
