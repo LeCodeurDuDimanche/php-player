@@ -7,7 +7,7 @@
         const AVAILABLE_TYPES = ['local', 'youtube', 'url'];
 
         private $uri, $type, $name, $path;
-        private $ready, $loading, $loadCommand;
+        private $ready, $loading, $loadCommand, $hasErrors;
         private $length;
         private $loadingStart;
 
@@ -20,6 +20,7 @@
             $this->uri = $uri;
             $this->ready = false;
             $this->loading = false;
+            $this->hasErrors = false;
             $this->name = $this->guessName();
             $this->loadCommand = null;
             $this->path = null;
@@ -47,6 +48,11 @@
         {
             $this->updateStatus();
             return $this->ready;
+        }
+
+        public function isInvalid() : bool
+        {
+            return $this->hasErrors;
         }
 
         public function isLoading() : bool
@@ -98,7 +104,12 @@
             return $this->loadingStart;
         }
 
-        public function load(string $dir, string $format="wav") : bool
+        public function canBeginStreaming() : bool
+        {
+            return $this->isReady() || ($this->isLoading() && file_exists($this->path));
+        }
+
+        public function load(string $dir, string $format="wav", bool $shouldNormalize=true) : bool
         {
             if ($this->isReady()) return true;
             if ($this->isLoading()) return false;
@@ -116,21 +127,24 @@
                 return true;
             }
 
+            $filters = $shouldNormalize ?  "-af loudnorm" : "";
+
             $this->loading = true;
             $this->loadingStart = microtime(true);
             //TODO: Should I let them in their origin format ?
             switch ($this->type) {
                 case 'local':
                     echo "loading local file $escapedURI to " . $this->path . "\n";
-                    $this->loadCommand = new Command("ffmpeg -i '$escapedURI' \"" . $this->path . "\" -v error");
+                    $this->loadCommand = new Command("ffmpeg -i '$escapedURI' -v error $filters \"" . $this->path . "\"");
                     break;
                 case 'url':
                     echo "loading remote file $escapedURI\n";
-                    $this->loadCommand = new Command("wget '$escapedURI' -q -O -|ffmpeg -i - \"" . $this->path . "\" -v error");
+                    $this->loadCommand = new Command("wget '$escapedURI' -q -O -|ffmpeg -v error -y -i - $filters \"" . $this->path . "\"");
                     break;
                 case 'youtube':
                     echo "loading yt video $escapedURI\n";
-                    $this->loadCommand = new Command("youtube-dl '$escapedURI' --no-cache-dir --write-info-json --no-playlist -x --restrict-filenames --audio-format $format -o \"$outputFileWithoutExt.%(ext)s\"");
+                    $convCmd = "--exec 'ffmpeg -y -v error -i {} $filters \"" . $this->path . "\"'";
+                    $this->loadCommand = new Command("youtube-dl '$escapedURI' --no-cache-dir --write-info-json --no-playlist --restrict-filenames $convCmd -o \"$outputFileWithoutExt.%(ext)s\"");
                     break;
             }
 
@@ -163,6 +177,7 @@
             {
                 if ($errors = $this->loadCommand->getNextErrorLine()) {
                     echo "Erreur chargement :\n $errors\n";
+                    $this->hasError = true;
                     throw new LoadingException("Impossible de charger la musique : $errors");
                 }
 

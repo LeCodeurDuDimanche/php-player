@@ -93,6 +93,11 @@
             return null;
         }
 
+        public function getCurrentSong() : ?Song
+        {
+            return $this->getSong($this->getIndex());
+        }
+
         public function getSong(int $index) : ?Song
         {
             if ($index < 0 || $index >= $this->getQueueLength())

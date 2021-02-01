@@ -14,6 +14,7 @@ class MusicDaemon {
     private $shouldPlay;
     private $cacheDir;
     private $config;
+    private $waitingCache;
 
     public function __construct(?string $cacheDir = null)
     {
@@ -26,6 +27,7 @@ class MusicDaemon {
         $this->shouldPlay = true;
         $this->cacheDir = $cacheDir ?? getenv("HOME") . "/player-music";
         $this->config = [];
+        $this->waitingCache = false;
 
         $this->createLibraryDirectory();
         $this->loadDefaultConfig();
@@ -57,7 +59,8 @@ class MusicDaemon {
     {
         $this->config = [
                 'format' => 'wav',
-                'caching_time' => 1.5 // in seconds, resolution is 50 ms
+                'caching_time' => 1, // in seconds, resolution is 50 ms
+                'normalize_audio' => true,
         ];
     }
 
@@ -141,6 +144,9 @@ class MusicDaemon {
             case 'caching_value':
                 $value = min(10, abs(floatval($value)));
                 break;
+            case 'normalize_audio':
+                $value = boolval($value);
+                break;
         }
         $config[$key] = $value;
     }
@@ -178,7 +184,7 @@ class MusicDaemon {
     private function addSong(Song $song, int $pos) : void
     {
         // Load song, if needed
-        $song->load($this->getLibraryDirectory(), $this->config["format"]);
+        $song->load($this->getLibraryDirectory(), $this->config["format"], $this->config['normalize_audio']);
 
         $this->status->addSong($song, $pos);
     }
@@ -189,7 +195,9 @@ class MusicDaemon {
         if (!$this->shouldPlay)
          return;
 
-        if (! $this->status->isPlaying())
+        if ($this->waitingCache)
+            $this->startPlayerIfReady();
+        else if (! $this->status->isPlaying())
         {
             // On a ajoute une musique apres avoir tout lu
             if($this->status->getIndex() + 1 < $this->status->getQueueLength())
@@ -223,9 +231,35 @@ class MusicDaemon {
             try {
                 $song->isReady();
             } catch (LoadingException $e) {
-                $this->status->removeSong($i);
+                // Invalid flag set
+                $this->sendError("loading", $e->getMessage());
             }
+            if ($song->isInvalid())
+                $this->status->removeSong($i);
         }
+    }
+
+    private function startPlayerIfReady() : void
+    {
+        $song = $this->status->getCurrentSong();
+        if ($song == null)
+            return;
+        try {
+            if (!$song->canBeginStreaming() || microtime(true) - $song->getLoadingStart() < $this->config["caching_time"])
+                return;
+        } catch (LoadingException $e)
+        {
+            $this->sendError("loading", $e->getMessage());
+            $this->waitingCache = false;
+            return;
+        }
+        $this->waitingCache = false;
+
+        $this->player = new Command("ffplay -vn -nodisp -autoexit -loglevel fatal '{$song->getPath()}'");
+        $this->player->launch();
+
+        $this->status->play();
+        echo "Playing {$song->getIndex()} {$song->getName()}\n";
     }
 
     private function doChange(int $offset) : void
@@ -244,27 +278,17 @@ class MusicDaemon {
             return;
 
         echo "Will play $index {$song->getName()}\n";
-        //TODO : find better solution
-        try {
-            while ($song->getLoadingStart() > 0 && microtime(true) - $song->getLoadingStart() < $this->config["caching_time"] && !$song->isReady())
-                usleep(50 * 1000);
-        } catch (LoadingException $e)
-        {
-            $this->sendError("loading", $e->getMessage());
-            return;
-        }
-
-        $this->player = new Command("ffplay -vn -nodisp -autoexit -loglevel fatal '{$song->getPath()}'");
-        $this->player->launch();
-
-        $this->status->play();
+        $this->waitingCache = true;
     }
 
     private function doResume() : void
     {
-        if (! $this->status->isPlaying() && $this->player) {
+        if (! $this->status->isPlaying()) {
             $this->status->play();
-            $this->player->resume();
+            if ($this->player)
+                $this->player->resume();
+            else
+                $this->doPlay($this->status->getIndex());
             $this->shouldPlay = true;
         }
     }
