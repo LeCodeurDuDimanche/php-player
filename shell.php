@@ -14,6 +14,14 @@
             echo "Usage : add type uri [pos] (where type one of url, local or youtube)\n";
     }
 
+    function cmd_del($m, $args)
+    {
+        if (count($args) != 1)
+            echo "Usage : del index\n";
+        else
+            $m->removeMusic($args[0]);
+    }
+
     function cmd_play($m, $args) {
         sendCommand($m, $args, 'play');
     }
@@ -50,9 +58,32 @@
     function cmd_set($m, $args)
     {
         if (count($args) != 2)
-            echo "Usage : set key value";
+            echo "Usage : set key value\n";
         else
             $m->setConfigurationOption($args[0], $args[1]);
+    }
+
+    function cmd_get($m, $args)
+    {
+        if (count($args) > 1) {
+            echo "Usage : get [key]\n";
+            return;
+        }
+        if (count($args) == 1)
+            $keys = [$args[0]];
+        else
+            $keys = ["format", "caching_time", "normalize_audio"];
+
+        foreach ($keys as $key)
+        {
+            echo "$key : ";
+            $value = $m->getConfigurationOption($key);
+            if ($value !== null)
+                echo $value . "\n";
+            else
+                printFeedBack($m);
+        }
+
     }
 
     function cmd_help()
@@ -89,7 +120,7 @@
     $manager = new Manager();
     echo "\r                   \r";
 
-    $commands = ["add", "play", "pause", "next", "prev", "query", "kill", "start", "set", "help"];
+    $commands = ["add", "del", "play", "pause", "next", "prev", "query", "kill", "start", "set", "get", "help"];
 
     while (true)
     {

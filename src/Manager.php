@@ -1,7 +1,7 @@
 <?php
     namespace lecodeurdudimanche\PHPPlayer;
 
-    use lecodeurdudimanche\UnixStream\{UnixStream, Message};
+    use lecodeurdudimanche\UnixStream\{IOException, UnixStream, Message};
     use lecodeurdudimanche\Processes\Command;
 
     class Manager {
@@ -18,8 +18,12 @@
             $this->playbackStatus = new PlaybackStatus;
             $this->cacheDir = $cacheDir;
 
-            $this->ensureDaemonIsRunning();
+            $this->resetConnection();
+        }
 
+        private function resetConnection() : void
+        {
+            $this->ensureDaemonIsRunning();
             $this->openStream();
         }
 
@@ -53,24 +57,56 @@
             return intval($result["out"]);
         }
 
-        public function killDaemon(bool $force = false) : void
+        public function killDaemon(bool $force = false) : bool
         {
             if ($force)
-                (new Command("kill -9 $this->daemonPID"))->execute();
+                return !(new Command("kill -9 $this->daemonPID"))->execute()['err'];
             else
-                $this->stream->write(new Message(MessageType::KILL, ""));
+                return $this->write(new Message(MessageType::KILL, ""));
         }
 
-        public function setConfigurationOption(string $key, string $value) : void
+        public function setConfigurationOption(string $key, string $value) : bool
         {
-            $this->stream->write(new Message(MessageType::CONF_SET, compact("key", "value")));
+            return $this->write(new Message(MessageType::CONF_SET, compact("key", "value")));
         }
 
-        public function queueMusic(string $type, string $uri, int $position = MusicDaemon::LAST_POS) : void
+        public function getConfigurationOption(string $key) : ?string
+        {
+            if (! $this->write(new Message(MessageType::CONF_GET, compact('key'))))
+                return null;
+
+            $value = null;
+            do {
+                $message = $this->doIO(function($stream) {
+                    return $stream->readNext([MessageType::CONF_DATA, MessageType::FEEDBACK_DATA], true, UnixStream::MODE_READ);
+                });
+
+                if ($message === false)
+                    return null;
+                else if ($message->getType() == MessageType::FEEDBACK_DATA)
+                {
+                    $this->stream->addToBuffer($message);
+                    if ($message->getData()['type'] == 'error')
+                        return null;
+                }
+                else if ($message->getData()['key'] === $key)
+                    $value = $message->getData()['value'];
+
+            } while ($value === null);
+            return $value;
+        }
+
+        public function queueMusic(string $type, string $uri, int $position = MusicDaemon::LAST_POS) : bool
         {
             $data = compact("type", "uri", "position");
-            $this->stream->write(new Message(MessageType::QUEUE_MUSIC, $data));
+            return $this->write(new Message(MessageType::QUEUE_MUSIC, $data));
         }
+
+        public function removeMusic(int $position) : bool
+        {
+            return $this->write(new Message(MessageType::REMOVE_MUSIC, ["index" => $position]));
+        }
+
 
         public function __call($name, $arguments)
         {
@@ -84,17 +120,25 @@
         public function getLastServerData() : array
         {
             $array = array();
-            while ($mes = $this->stream->readNext([MessageType::FEEDBACK_DATA], false, false))
+            while ($mes = $this->doIO(function ($stream) { return $stream->readNext([MessageType::FEEDBACK_DATA], false, UnixStream::MODE_READ); }))
                 array_push($array, $mes);
             return $array;
         }
 
-        public function syncPlaybackStatus() : PlaybackStatus
+        public function syncPlaybackStatus() : ?PlaybackStatus
         {
-            $this->stream->write(new Message(MessageType::QUERY, null));
+            if (! $this->write(new Message(MessageType::QUERY, null)))
+                return null;
 
+            //echo "Fetching playback data \n";
             // We wait for the next message, not discarding other messages
-            $message = $this->stream->readNext([MessageType::PLAYBACK_DATA], true, false);
+            $message = $this->doIO(function($stream) {
+                return $stream->readNext([MessageType::PLAYBACK_DATA], true, UnixStream::MODE_READ);
+            });
+            if ($message === false)
+                return null;
+
+            //echo "Syncing playback status completed\n";
 
             $this->playbackStatus = PlaybackStatus::fromArray($message->getData());
 
@@ -106,9 +150,30 @@
             return $this->playbackStatus;
         }
 
-        private function sendCommand(string $cmd) : void
+        public function write(Message $m) : bool
+        {
+            return $this->doIO(function ($stream) use ($m) {
+                $stream->write($m);
+                return true;
+            }) !== false;
+        }
+
+        private function sendCommand(string $cmd) : bool
         {
             $m = new Message(MessageType::PLAYBACK_COMMAND, $cmd);
-            $this->stream->write($m);
+            return $this->write($m);
+        }
+
+        private function doIO(callable $callback)
+        {
+            try {
+                //echo "Executing IO callback\n";
+                return $callback($this->stream);
+            } catch(IOException $e)
+            {
+                //TODO: log $e ?
+                $this->resetConnection();
+                return false;
+            }
         }
     }

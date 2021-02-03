@@ -53,12 +53,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/LeCodeurDuDimanche/php-unix-streams.git",
-                "reference": "bcbeaa9326b76a91016ee041bfffd986a48f2eb9"
+                "reference": "f3c86645b38fd977cd38b3834e886c405c79dbee"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/LeCodeurDuDimanche/php-unix-streams/zipball/bcbeaa9326b76a91016ee041bfffd986a48f2eb9",
-                "reference": "bcbeaa9326b76a91016ee041bfffd986a48f2eb9",
+                "url": "https://api.github.com/repos/LeCodeurDuDimanche/php-unix-streams/zipball/f3c86645b38fd977cd38b3834e886c405c79dbee",
+                "reference": "f3c86645b38fd977cd38b3834e886c405c79dbee",
                 "shasum": ""
             },
             "require": {
@@ -86,7 +86,7 @@
                 "issues": "https://github.com/LeCodeurDuDimanche/php-unix-streams/issues",
                 "source": "https://github.com/LeCodeurDuDimanche/php-unix-streams/tree/master"
             },
-            "time": "2020-12-28T22:43:06+00:00"
+            "time": "2021-02-03T17:43:56+00:00"
         }
     ],
     "packages-dev": [],

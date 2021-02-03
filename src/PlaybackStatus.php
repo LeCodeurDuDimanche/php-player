@@ -111,7 +111,9 @@
                 return false;
 
             array_splice($this->queue, $index, 1);
-            if ($index <= $this->index)
+            if ($index < $this->index)
+                $this->index--;
+            else if ($index == $this->getQueueLength()) // Removed at end
                 $this->index--;
 
             return true;
@@ -126,7 +128,7 @@
         {
             $str = "Status : " . ($this->playing ? "en cours" : "en pause");
             $str .= ", temps de lecture : " . $this->getPlayingTime() . "s\n";
-            $str .= "Chanson actuelle : " . $this->index . " / " . $this->getQueueLength() . "\n";
+            $str .= "Chanson actuelle : " . ($this->index  + 1) . " / " . $this->getQueueLength() . "\n";
             $str .=  "Chansons dans la queue :\n";
             foreach($this->queue as $index => $song)
                 $str .= "\t" . ($index + 1) . ". $song\n";

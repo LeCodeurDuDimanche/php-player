@@ -144,7 +144,7 @@
                 case 'youtube':
                     echo "loading yt video $escapedURI\n";
                     $convCmd = "--exec 'ffmpeg -y -v error -i {} $filters \"" . $this->path . "\" && rm -f {}'";
-                    $this->loadCommand = new Command("youtube-dl '$escapedURI' --no-cache-dir --write-info-json --no-playlist --restrict-filenames $convCmd -o \"$outputFileWithoutExt.%(ext)s\"");
+                    $this->loadCommand = new Command("youtube-dl '$escapedURI' --no-cache-dir --no-warnings --write-info-json --no-playlist --restrict-filenames $convCmd -o \"$outputFileWithoutExt.%(ext)s\"");
                     break;
             }
 

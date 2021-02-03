@@ -92,7 +92,7 @@ class MusicDaemon {
             while ($messagePair = $this->getNextCommand())
             {
                 $message = $messagePair['message'];
-                echo "new command : " . $message->getType() . "\n";
+                //echo "new command : " . $message->getType() . "\n";
                 $data = $message->getData();
                 switch($message->getType())
                 {
@@ -108,6 +108,10 @@ class MusicDaemon {
                         $this->sendError("input", $e->getMessage(), $messagePair['stream']);
                     }
                     break;
+                case MessageType::REMOVE_MUSIC:
+                    if (! $this->removeSong(intval($data['index'])))
+                        $this->sendError("input", "Index $data[index] is out of range");
+                    break;
                 case MessageType::PLAYBACK_COMMAND:
                     $this->playbackControl($data);
                     break;
@@ -118,6 +122,15 @@ class MusicDaemon {
                 case MessageType::CONF_SET:
                     $this->set($data["key"], $data["value"]);
                     break;
+                case MessageType::CONF_GET:
+                    $key = $data["key"];
+                    $value = $this->get($key);
+                    if ($value === null)
+                        $this->sendError("input", "$data[key] is not a valid configuration key", $messagePair['stream']);
+                    else
+                        $messagePair['stream']->write(new Message(MessageType::CONF_DATA, compact('key', 'value')));
+                    break;
+
 
                 }
             }
@@ -134,6 +147,11 @@ class MusicDaemon {
         unlink(self::getSocketFile());
     }
 
+    private function get(string $key) : ?string
+    {
+        return array_key_exists($key, $this->config) ? $this->config[$key] : null;
+    }
+
     private function set(string $key, string $value) : void
     {
         switch($key){
@@ -145,7 +163,7 @@ class MusicDaemon {
                 $value = min(10, abs(floatval($value)));
                 break;
             case 'normalize_audio':
-                $value = boolval($value);
+                $value = intval($value);
                 break;
         }
         $this->config[$key] = $value;
@@ -166,7 +184,12 @@ class MusicDaemon {
         foreach($this->streams as $key => $stream)
         {
             try {
-                $message = $stream->readNext([MessageType::PLAYBACK_COMMAND, MessageType::QUEUE_MUSIC, MessageType::KILL, MessageType::QUERY, MessageType::CONF_SET], false);
+                $message = $stream->readNext(
+                    [
+                        MessageType::PLAYBACK_COMMAND, MessageType::QUEUE_MUSIC, MessageType::REMOVE_MUSIC,
+                        MessageType::KILL, MessageType::QUERY, MessageType::CONF_GET, MessageType::CONF_SET
+                    ],
+                    false);
                 if ($message)
                     return compact("message", "stream");
 
@@ -189,6 +212,24 @@ class MusicDaemon {
         $this->status->addSong($song, $pos);
     }
 
+    private function removeSong(int $index) : bool
+    {
+        if ($index < 0 || $index >= $this->status->getQueueLength())
+            return false;
+
+        $isCurrentIndex = $index == $this->status->getIndex();
+        if ($isCurrentIndex)
+            $this->stop();
+
+        $this->status->removeSong($index);
+
+        if ($isCurrentIndex && $this->status->getQueueLength())
+            $this->doResume();
+        else
+            $this->shouldPlay = true;
+        return true;
+    }
+
     private function managePlayback() : void
     {
         // Si on ne veut pas jouer, alosrs on ne relance rien
@@ -203,10 +244,8 @@ class MusicDaemon {
             if($this->status->getIndex() + 1 < $this->status->getQueueLength())
                 $this->doChange(+1);
         }
-        else if (! $this->player->isRunning()) // On est arrive a la fin de la musique
+        else if ($this->player && ! $this->player->isRunning()) // On est arrive a la fin de la musique
         {
-            echo "Player out : " . $this->player->getNextLine() . "\n";
-            echo "Player err  : " . $this->player->getNextErrorLine() . "\n\n";
             if ($err = $this->player->getNextErrorLine())
                 $this->sendError("player", $err);
             $this->doChange(+1);
@@ -240,7 +279,7 @@ class MusicDaemon {
                 $this->sendError("loading", $e->getMessage());
             }
             if ($song->isInvalid())
-                $this->status->removeSong($i);
+                $this->removeSong($i);
         }
     }
 
@@ -264,7 +303,7 @@ class MusicDaemon {
         $this->player->launch();
 
         $this->status->play();
-        echo "Playing {$song->getIndex()} {$song->getName()}\n";
+        echo "Playing {$this->status->getIndex()} {$song->getName()}\n";
     }
 
     private function doChange(int $offset) : void
