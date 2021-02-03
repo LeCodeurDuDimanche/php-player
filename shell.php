@@ -72,6 +72,19 @@
         echo $data . "\n";
     }
 
+    function printFeedback($m)
+    {
+        $messages = $m->getLastServerData();
+        if (count($messages))
+            echo "Informations du serveur :\n";
+
+        foreach ($messages as $m)
+        {
+            $data = $m->getData();
+            echo "\t$data[type] : $data[message]\n";
+        }
+    }
+
     echo "Starting manager...";
     $manager = new Manager();
     echo "\r                   \r";
@@ -98,6 +111,8 @@
         else {
             if ($manager == null)
                 $manager = new Manager();
+
+            printFeedback($manager);
 
             $function = "cmd_" . array_shift($args);
             $function($manager, $args);

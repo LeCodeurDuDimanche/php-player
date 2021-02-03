@@ -105,7 +105,7 @@ class MusicDaemon {
                         $song = new Song($data["type"], $data["uri"]);
                         $this->addSong($song, $data['position']);
                     } catch(\Exception $e) {
-                        $messagePair['stream']->write(new Message(MessageType::FEEDBACK_DATA, $e->getMessage()));
+                        $this->sendError("input", $e->getMessage(), $messagePair['stream']);
                     }
                     break;
                 case MessageType::PLAYBACK_COMMAND:
@@ -213,12 +213,17 @@ class MusicDaemon {
         }
     }
 
-    private function sendError(string $type, string $message)
+    private function sendError(string $type, string $message, $stream = null)
     {
         $data = new Message(MessageType::FEEDBACK_DATA, ['type' => 'error', "message" => "[$type] $message"]);
         echo "Error : [$type] $message\n";
         //TODO: Should we really broadcast that ? I think not but anyways...
-        foreach ($this->streams as $stream)
+        if ($stream == null)
+        {
+            foreach ($this->streams as $stream)
+                $stream->write($data);
+        }
+        else
             $stream->write($data);
     }
 

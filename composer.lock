@@ -12,12 +12,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/LeCodeurDuDimanche/php-process-launcher.git",
-                "reference": "433832d8e45bba31cd24d93a94685864bfe7d272"
+                "reference": "15848c2fca1974e92d8e444e8c5940b3ea0b8074"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/LeCodeurDuDimanche/php-process-launcher/zipball/433832d8e45bba31cd24d93a94685864bfe7d272",
-                "reference": "433832d8e45bba31cd24d93a94685864bfe7d272",
+                "url": "https://api.github.com/repos/LeCodeurDuDimanche/php-process-launcher/zipball/15848c2fca1974e92d8e444e8c5940b3ea0b8074",
+                "reference": "15848c2fca1974e92d8e444e8c5940b3ea0b8074",
                 "shasum": ""
             },
             "require": {
@@ -45,7 +45,7 @@
                 "issues": "https://github.com/LeCodeurDuDimanche/php-process-launcher/issues",
                 "source": "https://github.com/LeCodeurDuDimanche/php-process-launcher/tree/master"
             },
-            "time": "2020-12-20T17:52:09+00:00"
+            "time": "2021-01-21T01:49:36+00:00"
         },
         {
             "name": "lecodeurdudimanche/php-unix-streams",
@@ -53,12 +53,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/LeCodeurDuDimanche/php-unix-streams.git",
-                "reference": "2bfa039eea071ced4ebfde1057d80c1048cd1939"
+                "reference": "bcbeaa9326b76a91016ee041bfffd986a48f2eb9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/LeCodeurDuDimanche/php-unix-streams/zipball/2bfa039eea071ced4ebfde1057d80c1048cd1939",
-                "reference": "2bfa039eea071ced4ebfde1057d80c1048cd1939",
+                "url": "https://api.github.com/repos/LeCodeurDuDimanche/php-unix-streams/zipball/bcbeaa9326b76a91016ee041bfffd986a48f2eb9",
+                "reference": "bcbeaa9326b76a91016ee041bfffd986a48f2eb9",
                 "shasum": ""
             },
             "require": {
@@ -86,7 +86,7 @@
                 "issues": "https://github.com/LeCodeurDuDimanche/php-unix-streams/issues",
                 "source": "https://github.com/LeCodeurDuDimanche/php-unix-streams/tree/master"
             },
-            "time": "2020-09-07T15:21:06+00:00"
+            "time": "2020-12-28T22:43:06+00:00"
         }
     ],
     "packages-dev": [],

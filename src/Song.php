@@ -176,8 +176,8 @@
             if (! $this->loadCommand->isRunning())
             {
                 if ($errors = $this->loadCommand->getNextErrorLine()) {
-                    echo "Erreur chargement :\n $errors\n";
-                    $this->hasError = true;
+                    $this->hasErrors = true;
+                    $this->loading = false;
                     throw new LoadingException("Impossible de charger la musique : $errors");
                 }
 

@@ -110,12 +110,8 @@
             if ($index < 0 || $index >= $this->getQueueLength())
                 return false;
 
-            //TODO : on pourrait traiter ça mieux
-            if ($this->index == $index)
-                return false;
-
             array_splice($this->queue, $index, 1);
-            if ($index < $this->index)
+            if ($index <= $this->index)
                 $this->index--;
 
             return true;

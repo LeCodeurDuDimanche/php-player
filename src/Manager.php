@@ -81,12 +81,20 @@
 
         }
 
+        public function getLastServerData() : array
+        {
+            $array = array();
+            while ($mes = $this->stream->readNext([MessageType::FEEDBACK_DATA], false, false))
+                array_push($array, $mes);
+            return $array;
+        }
+
         public function syncPlaybackStatus() : PlaybackStatus
         {
             $this->stream->write(new Message(MessageType::QUERY, null));
 
-            // Pas ouf vu qu'on ignore des trucs potentiellement important, mais normalement c'est ok
-            $message = $this->stream->readNext([MessageType::PLAYBACK_DATA]);
+            // We wait for the next message, not discarding other messages
+            $message = $this->stream->readNext([MessageType::PLAYBACK_DATA], true, false);
 
             $this->playbackStatus = PlaybackStatus::fromArray($message->getData());
 
